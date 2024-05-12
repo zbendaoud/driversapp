@@ -4,7 +4,7 @@ import Options from "@/components/Options";
 import Report from "@/components/Report";
 import axios from "axios";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DragDropContext,
   Droppable,
@@ -93,6 +93,8 @@ export default function Home() {
 
   const [avoidTolls, setAvoidTolls] = useState(false);
   const [plannedStartDate, setPlannedStartDate] = useState(null);
+  const [isUploaded, setIsUploaded] = useState(true);
+  const [loadingUpload, setLoadingUpload] = useState(false);
 
   useEffect(() => {
     if (id && date) {
@@ -271,7 +273,6 @@ export default function Home() {
     });
   };
 
-
   useEffect(() => {
     if (date) {
       const newDate = new Date(date);
@@ -290,6 +291,52 @@ export default function Home() {
       setPlannedStartDate(newDate);
     }
   }, [date]);
+
+  const convertToJsonString = (object) => {
+    return JSON.stringify(object, null, 2);
+  };
+
+  // Function to create a downloadable file and trigger its download
+  const downloadJsonFile = () => {
+    const data = { stops, date, id, isUploaded: true };
+    const jsonContent = convertToJsonString(data);
+    const blob = new Blob([jsonContent], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "data.json");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileUpload = (event) => {
+    setLoadingUpload(true);
+    const file = event.target.files[0];
+
+    if (file) {
+      // Read the file
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = JSON.parse(e.target.result);
+        // Assuming the JSON file contains properties: stops, date, id, isUploaded
+        const { stops, date, id, isUploaded } = content;
+        // Process the data as needed
+        setStops(stops);
+        setDate(date);
+        setId(id);
+        setIsUploaded(isUploaded);
+        setLoadingUpload(false);
+      };
+      reader.readAsText(file);
+    }
+  };
 
   return (
     <div className="wrapper">
@@ -351,7 +398,22 @@ export default function Home() {
         >
           {loadingStops ? "Importing run ..." : "Import run"}
         </Button>
+
+        <Button
+          onClick={handleUploadClick}
+         
+        >
+          {loadingUpload ? "Uploading ..." : "Upload"}
+        </Button>
+
+        <input
+          type="file"
+          style={{ display: "none" }}
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+        />
       </div>
+
       <div className="mt-8 grid grid-cols-2 gap-8">
         {loadingStops ? (
           <div className="h-[600px] flex items-center justify-center">
@@ -570,15 +632,22 @@ export default function Home() {
                 </DragDropContext>
               </div>
             </div>
-            <Button
-              className="bg-green-800 hover:bg-green-800/90 my-4"
-              onClick={generateMap}
-              disabled={
-                loadingExport || !selectedEndPoint || !selectedStartPoint
-              }
-            >
-              {!loadingExport ? "Export Run" : "Exporting ..."}
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                className="bg-green-800 hover:bg-green-800/90 my-4"
+                onClick={generateMap}
+                disabled={
+                  loadingExport || !selectedEndPoint || !selectedStartPoint
+                }
+              >
+                {!loadingExport ? "Export Run" : "Exporting ..."}
+              </Button>
+              {stops ? (
+                <Button onClick={downloadJsonFile} className="my-4">
+                  Download runs
+                </Button>
+              ) : null}
+            </div>
           </div>
         ) : null}
 

@@ -12,6 +12,8 @@ import {
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
+
+
 const Report = ({ report }) => {
   const [reportInfo, setReportInfo] = useState()
   function formatDuration(minutes) {
@@ -123,7 +125,7 @@ const Report = ({ report }) => {
               <TableCell>{stop.legTotalKm}</TableCell>
               <TableCell>{stop.legCost}</TableCell>
               <TableCell>{stop.legTotalCost}</TableCell>
-              <TableCell>{stop.legDriveDuration}</TableCell>
+              <TableCell>{stop.legDriveDuration?.toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
