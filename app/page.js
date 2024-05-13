@@ -38,6 +38,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Home() {
   const [stops, setStops] = useState(null);
@@ -317,7 +323,6 @@ export default function Home() {
   };
 
   const handleFileUpload = (event) => {
-    setLoadingUpload(true);
     const file = event.target.files[0];
 
     if (file) {
@@ -399,10 +404,7 @@ export default function Home() {
           {loadingStops ? "Importing run ..." : "Import run"}
         </Button>
 
-        <Button
-          onClick={handleUploadClick}
-         
-        >
+        <Button onClick={handleUploadClick}>
           {loadingUpload ? "Uploading ..." : "Upload"}
         </Button>
 
@@ -442,7 +444,7 @@ export default function Home() {
                         <Input
                           type="number"
                           placeholder="Customer number"
-                          className="mt-3"
+                          className="mt-3 text-black"
                           value={newStop.customerNum}
                           onChange={(e) =>
                             setNewStop({
@@ -454,8 +456,8 @@ export default function Home() {
 
                         <Input
                           type="text"
-                          placeholder="Customer name"
-                          className="mt-3"
+                          placeholder="Customer name*"
+                          className="mt-3 text-black"
                           value={newStop.shipToName}
                           onChange={(e) =>
                             setNewStop({
@@ -468,7 +470,7 @@ export default function Home() {
                         <Input
                           type="text"
                           placeholder="Street address"
-                          className="mt-3"
+                          className="mt-3 text-black"
                           value={newStop.address.StreetAddress}
                           onChange={(e) =>
                             setNewStop({
@@ -484,7 +486,7 @@ export default function Home() {
                         <Input
                           type="text"
                           placeholder="City"
-                          className="mt-3"
+                          className="mt-3 text-black"
                           value={newStop.address.City}
                           onChange={(e) =>
                             setNewStop({
@@ -500,7 +502,7 @@ export default function Home() {
                         <Input
                           type="text"
                           placeholder="State"
-                          className="mt-3"
+                          className="mt-3 text-black"
                           value={newStop.address.State}
                           onChange={(e) =>
                             setNewStop({
@@ -515,8 +517,8 @@ export default function Home() {
 
                         <Input
                           type="text"
-                          placeholder="ZIP"
-                          className="mt-3"
+                          placeholder="ZIP*"
+                          className="mt-3 text-black"
                           value={newStop.address.Zip}
                           onChange={(e) =>
                             setNewStop({
@@ -532,7 +534,7 @@ export default function Home() {
                         <Input
                           type="text"
                           placeholder="Country"
-                          className="mt-3"
+                          className="mt-3 text-black"
                           value={newStop.address.Country}
                           onChange={(e) =>
                             setNewStop({
@@ -548,7 +550,7 @@ export default function Home() {
                         <Input
                           type="text"
                           placeholder="Route Seq"
-                          className="mt-3"
+                          className="mt-3 text-black"
                           value={newStop.route_seq}
                           onChange={(e) =>
                             setNewStop({
@@ -585,7 +587,10 @@ export default function Home() {
                       >
                         Cancel
                       </AlertDialogCancel>
-                      <AlertDialogAction onClick={AddNewStop}>
+                      <AlertDialogAction
+                        disabled={!newStop.address.Zip || !newStop.shipToName}
+                        onClick={AddNewStop}
+                      >
                         Add
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -599,8 +604,8 @@ export default function Home() {
                       <div ref={provided.innerRef} {...provided.droppableProps}>
                         {stops?.map((stop, index) => (
                           <Draggable
-                            key={stop.route_seq}
-                            draggableId={stop.route_seq}
+                            key={stop.OrderNum}
+                            draggableId={stop.OrderNum}
                             index={index}
                           >
                             {(provided) => (
@@ -633,18 +638,42 @@ export default function Home() {
               </div>
             </div>
             <div className="flex gap-4">
-              <Button
-                className="bg-green-800 hover:bg-green-800/90 my-4"
-                onClick={generateMap}
-                disabled={
-                  loadingExport || !selectedEndPoint || !selectedStartPoint
-                }
-              >
-                {!loadingExport ? "Export Run" : "Exporting ..."}
-              </Button>
+              {!selectedEndPoint || !selectedStartPoint ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Button
+                        className="bg-green-800 hover:bg-green-800/90 my-4"
+                        onClick={generateMap}
+                        disabled={
+                          loadingExport ||
+                          !selectedEndPoint ||
+                          !selectedStartPoint
+                        }
+                      >
+                        {!loadingExport ? "Calculate" : "Calculating ..."}
+                      </Button>
+                      <TooltipContent>
+                        Please fill the start and the end point
+                      </TooltipContent>
+                    </TooltipTrigger>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button
+                  className="bg-green-800 hover:bg-green-800/90 my-4"
+                  onClick={generateMap}
+                  disabled={
+                    loadingExport || !selectedEndPoint || !selectedStartPoint
+                  }
+                >
+                  {!loadingExport ? "Calculate" : "Calculating ..."}
+                </Button>
+              )}
+
               {stops ? (
                 <Button onClick={downloadJsonFile} className="my-4">
-                  Download runs
+                  Save stops
                 </Button>
               ) : null}
             </div>
@@ -653,7 +682,7 @@ export default function Home() {
 
         <div>
           {loadingExport ? (
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center h-full">
               <ClipLoader
                 size={150}
                 aria-label="Loading Spinner"
@@ -663,7 +692,9 @@ export default function Home() {
           ) : report ? (
             <Report report={report} />
           ) : !report && stops ? (
-            <div>No report yet!</div>
+            <div className="flex items-center justify-center h-full">
+              No report yet!
+            </div>
           ) : null}
         </div>
       </div>
